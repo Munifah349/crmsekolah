@@ -1,9 +1,31 @@
 <?php
-require_once '../config/database.php';
-// checkLogin(); // Aktifkan jika sistem auth sudah berjalan
-
-// CONTOH KODE UNTUK MENGAMBIL DATA DARI DATABASE:
-// $query = mysqli_query($conn, "SELECT * FROM kunjungan ORDER BY id DESC");
+// Data dummy kunjungan sesuai dengan desain Figma
+$data_kunjungan = [
+    [
+        'id' => 'KJN001',
+        'nama_siswa' => 'Bpk Hermawan',
+        'asal_sekolah' => 'SMPN 1 Bandung',
+        'tanggal' => '30 Ags 2026',
+        'jam' => '09:15',
+        'jenis' => 'Konsultasi Pendaftaran',
+        'pic' => 'Admin Sekolah',
+        'sosmed' => 'IG/TikTok',
+        'status' => 'Follow Up', // Pilihan: Follow Up, Deal, Pending
+        'media' => 'Ada'         // Pilihan: Ada, Tidak
+    ],
+    [
+        'id' => 'KJN002',
+        'nama_siswa' => 'Ibu Ratna',
+        'asal_sekolah' => 'SMPN 3 Cimahi',
+        'tanggal' => '30 Ags 2026',
+        'jam' => '10:30',
+        'jenis' => 'Penyerahan Berkas',
+        'pic' => 'Kepala TU',
+        'sosmed' => '-',
+        'status' => 'Deal',
+        'media' => 'Tidak'
+    ]
+];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -12,29 +34,34 @@ require_once '../config/database.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Tamu & Kunjungan - CRM System</title>
     
-    <!-- CSS Bootstrap -->
+    <!-- CSS Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { background-color: #F8F9FA; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        body { background-color: #F8F9FA; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; margin: 0; }
         
         /* SIDEBAR STYLING */
         .sidebar { width: 250px; height: 100vh; background-color: #4a628a; color: white; position: fixed; top: 0; left: 0; padding-top: 20px; z-index: 1000; }
         .sidebar h4 { padding: 0 20px; margin-bottom: 30px; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 10px; }
         .sidebar a { color: #e0e6ed; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-size: 14px; transition: 0.2s; }
         .sidebar a:hover { background-color: #3b5074; color: white; }
-        
-        /* Menu Kunjungan Aktif */
         .sidebar a.active { background-color: #3b5074; border-left: 4px solid white; color: white; font-weight: bold; }
         
         /* MAIN CONTENT STYLING */
-        .main-content { margin-left: 250px; padding: 0; min-height: 100vh; }
+        .main-content { margin-left: 250px; padding: 0; min-height: 100vh; background-color: #F8F9FA; display: flex; flex-direction: column; }
         .top-header { background-color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eaeaea; }
-        .content-area { padding: 30px; }
+        .content-area { padding: 25px 30px; flex-grow: 1; }
         
-        /* TABEL CUSTOM */
-        .table-custom th { font-size: 11px; background-color: #f1f4f8; color: #333; font-weight: 600; padding: 10px; text-align: center; }
-        .table-custom td { font-size: 11px; padding: 10px; vertical-align: middle; text-align: center; }
+        /* TABLE STYLING SESUAI FIGMA */
+        .card-table { background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .table { font-size: 12px; vertical-align: middle; }
+        .table th { background-color: #f4f6f9; color: #333; font-weight: 600; border-bottom: 2px solid #dee2e6; text-transform: uppercase; font-size: 11px; }
+        
+        /* STATUS BADGES */
+        .badge-followup { background-color: #ffc107; color: #000; font-weight: 500; padding: 4px 10px; border-radius: 4px; font-size: 11px; }
+        .badge-deal { background-color: #198754; color: #fff; font-weight: 500; padding: 4px 10px; border-radius: 4px; font-size: 11px; }
+        .badge-pending { background-color: #6c757d; color: #fff; font-weight: 500; padding: 4px 10px; border-radius: 4px; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -44,28 +71,27 @@ require_once '../config/database.php';
         <h4>📈 CRM System</h4>
         
         <a href="../dashboard/index.php" style="justify-content: flex-start; gap: 10px;">🏠 Dashboard</a>
-        <a href="index.php" class="active" style="justify-content: flex-start; gap: 10px;">👥 Kunjungan</a>
+        <a href="index.php" class="active" style="justify-content: flex-start; gap: 10px; border-left: 4px solid white;">👥 Kunjungan</a>
         
-        <!-- MENU CRM (Dropdown Tertutup) -->
-        <a href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#menuCrm" style="justify-content: space-between; align-items: center;">
+        <!-- MENU CRM DROPDOWN -->
+        <a href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#menuCrm" style="justify-content: space-between; align-items: center;" aria-expanded="false">
             <div style="display: flex; gap: 10px; align-items: center;">
                 <span>👤</span>
                 <span>CRM</span>
             </div>
             <span>▼</span>
         </a>
-        
         <div class="collapse" id="menuCrm">
             <div style="background-color: #3b5074; display: flex; flex-direction: column;">
-                <a href="../crm/index.php" style="padding-left: 45px;">Riwayat Interaksi</a>
+                <a href="../crm/riwayat_interaksi.php" style="padding-left: 45px;">Riwayat Interaksi</a>
                 <a href="../crm/tahap.php" style="padding-left: 45px;">Tahap</a>
                 <a href="../crm/agent.php" style="padding-left: 45px;">Agent</a>
                 <a href="../crm/label_status.php" style="padding-left: 45px;">Label Status</a>
             </div>
         </div>
 
-        <a href="index.php" style="justify-content: flex-start; gap: 10px;">📋 Laporan</a>
-        <a href="../users/index.php" style="justify-content: flex-start; gap: 10px;">🧑Pengguna</a>
+        <a href="../laporan/index.php" style="justify-content: flex-start; gap: 10px;">📋 Laporan</a>
+        <a href="../users/index.php" style="justify-content: flex-start; gap: 10px;">🧑 Pengguna</a>
         <a href="../pengaturan/index.php" style="justify-content: flex-start; gap: 10px;">⚙️ Pengaturan</a>
         
         <a href="../auth/logout.php" style="position: absolute; bottom: 20px; width: 100%; justify-content: flex-start; gap: 10px;">🚪 Logout</a>
@@ -74,11 +100,11 @@ require_once '../config/database.php';
     <!-- MAIN CONTENT -->
     <div class="main-content">
         
-        <!-- HEADER -->
+        <!-- HEADER ATAS -->
         <div class="top-header">
             <div>
-                <h5 class="m-0 text-dark fw-bold" style="font-size: 18px;">Daftar Tamu & Kunjungan</h5>
-                <span class="text-muted" style="font-size: 12px;">Dashboard / Kunjungan</span>
+                <h5 class="m-0 text-dark fw-bold" style="font-size: 17px;">DaftarTamu & Kunjungan</h5>
+                <span class="text-muted" style="font-size: 11px;">Dasboard / Kunjungan</span>
             </div>
             
             <div class="d-flex align-items-center text-end">
@@ -86,94 +112,85 @@ require_once '../config/database.php';
                     <span class="d-block fw-bold text-dark" style="font-size: 13px;">Admin Sekolah</span>
                     <span class="text-muted" style="font-size: 11px;">Kepala Tata Usaha</span>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; background-color: #dbe4f0; color: #4a628a; border: 1px solid #4a628a;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; background-color: #dbe4f0; color: #4a628a; border: 1px solid #4a628a; font-size: 13px;">
                     AS
                 </div>
             </div>
         </div>
 
-        <!-- KONTEN UTAMA -->
+        <!-- KONTEN UTAMA HALAMAN -->
         <div class="content-area">
             
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h6 class="mb-0 fw-bold text-dark">Data Riwayat & Kunjungan Tamu</h6>
-                <a href="form_kunjungan.php" class="btn btn-sm text-white px-3" style="background-color: #4a628a; border-radius: 4px; font-size: 12px;">+ Tambah Kunjungan</a>
+            <!-- JUDUL SECTION & TOMBOL TAMBAH KUNJUNGAN -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0" style="font-size: 15px;">Data Riwayat & Kunjungan Tamu</h6>
+                
+                <!-- Mengarah ke form_kunjungan.php yang dibuat sebelumnya -->
+                <a href="form_kunjungan.php" class="btn btn-primary btn-sm px-3 py-1 fw-semibold shadow-sm" style="font-size: 11.5px; background-color: #2b436f; border-color: #2b436f; border-radius: 4px;">
+                    + Tambah Kunjungan
+                </a>
             </div>
 
-            <div class="card shadow-sm border-0 bg-white">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-custom table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nama & Asal Sekolah</th>
-                                    <th>Waktu</th>
-                                    <th>Jenis & PIC</th>
-                                    <th>Sosmed</th>
-                                    <th>Status</th>
-                                    <th>Media</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- CONTOH DATA DUMMY 1 -->
-                                <tr>
-                                    <td>KJN001</td>
-                                    <td class="text-start">
-                                        <b>Bapak Hermawan</b><br>
-                                        <span class="text-muted" style="font-size:10px;">SMPN 1 Bandung</span>
-                                    </td>
-                                    <td>
-                                        30 Ags 2026<br>
-                                        <span class="text-muted" style="font-size:10px;">09:15</span>
-                                    </td>
-                                    <td>
-                                        Konsultasi Pendaftaran<br>
-                                        <span class="text-muted" style="font-size:10px;">Staf: Admin Sekolah</span>
-                                    </td>
-                                    <td>IG / TikTok</td>
-                                    <td><span class="badge bg-warning text-dark">Follow Up</span></td>
-                                    <td>Ada</td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-outline-primary py-0 px-1" style="font-size: 10px;">View</a>
-                                        <a href="#" class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size: 10px;">Hapus</a>
-                                    </td>
-                                </tr>
-
-                                <!-- CONTOH DATA DUMMY 2 -->
-                                <tr>
-                                    <td>KJN002</td>
-                                    <td class="text-start">
-                                        <b>Ibu Ratna</b><br>
-                                        <span class="text-muted" style="font-size:10px;">SMPN 3 Cimahi</span>
-                                    </td>
-                                    <td>
-                                        30 Ags 2026<br>
-                                        <span class="text-muted" style="font-size:10px;">10:30</span>
-                                    </td>
-                                    <td>
-                                        Penyerahan Berkas<br>
-                                        <span class="text-muted" style="font-size:10px;">Staf: Kepala TU</span>
-                                    </td>
-                                    <td>-</td>
-                                    <td><span class="badge bg-success">Deal</span></td>
-                                    <td>Tidak</td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-outline-primary py-0 px-1" style="font-size: 10px;">View</a>
-                                        <a href="#" class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size: 10px;">Hapus</a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- KOTAK TABEL -->
+            <div class="card-table">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 70px;">ID</th>
+                                <th>Nama & Asal Sekolah</th>
+                                <th style="width: 100px;">Waktu</th>
+                                <th>Jenis & PIC</th>
+                                <th class="text-center" style="width: 90px;">Sosmed</th>
+                                <th class="text-center" style="width: 90px;">Status</th>
+                                <th class="text-center" style="width: 70px;">Media</th>
+                                <th class="text-center" style="width: 110px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($data_kunjungan as $row): ?>
+                            <tr>
+                                <td class="text-center fw-bold text-secondary"><?= $row['id'] ?></td>
+                                <td>
+                                    <span class="fw-bold text-dark d-block"><?= $row['nama_siswa'] ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;"><?= $row['asal_sekolah'] ?></span>
+                                </td>
+                                <td>
+                                    <span class="d-block"><?= $row['tanggal'] ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;"><?= $row['jam'] ?></span>
+                                </td>
+                                <td>
+                                    <span class="d-block"><?= $row['jenis'] ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;">Staf: <?= $row['pic'] ?></span>
+                                </td>
+                                <td class="text-center text-muted"><?= $row['sosmed'] ?></td>
+                                <td class="text-center">
+                                    <?php if ($row['status'] == 'Follow Up'): ?>
+                                        <span class="badge-followup">Follow Up</span>
+                                    <?php elseif ($row['status'] == 'Deal'): ?>
+                                        <span class="badge-deal">Deal</span>
+                                    <?php else: ?>
+                                        <span class="badge-pending">Pending</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <?= $row['media'] ?>
+                                </td>
+                                <td class="text-center">
+                                    <a href="form_kunjungan.php?id=<?= $row['id'] ?>" class="btn btn-outline-primary btn-sm px-2 py-0" style="font-size: 11px;">Edit</a>
+                                    <a href="hapus.php?id=<?= $row['id'] ?>" class="btn btn-outline-danger btn-sm px-2 py-0" onclick="return confirm('Yakin ingin menghapus data ini?')" style="font-size: 11px;">Hapus</a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- Script Bootstrap -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

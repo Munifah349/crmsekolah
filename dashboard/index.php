@@ -62,6 +62,7 @@ require_once '../config/database.php';
         
         <div class="collapse" id="menuCrm">
             <div style="background-color: #3b5074; display: flex; flex-direction: column;">
+                 <a href="index.php" style="padding-left: 45px;">Riwayat Interaksi</a>
                 <a href="../crm/tahap.php" style="padding-left: 45px;">Tahap</a>
                 <a href="../crm/agent.php" style="padding-left: 45px;">Agent</a>
                 <a href="../crm/label_status.php" style="padding-left: 45px;">Label Status</a>
