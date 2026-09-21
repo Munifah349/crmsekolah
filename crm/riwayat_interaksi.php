@@ -15,6 +15,90 @@ $data_riwayat = [
         'tgl_followup' => '30/08/2026'
     ]
 ];
+
+// --- PROSES EXPORT / CETAK WORD ---
+if (isset($_GET['export']) && $_GET['export'] === 'word') {
+    $target_id = $_GET['id'] ?? null;
+    $export_data = $data_riwayat;
+
+    // Jika ada ID spesifik (tombol cetak di kolom Aksi), filter data
+    if ($target_id) {
+        $export_data = array_filter($data_riwayat, function($item) use ($target_id) {
+            return $item['id_siswa'] === $target_id;
+        });
+        $filename = "Riwayat_Interaksi_" . $target_id . "_" . date('Ymd') . ".doc";
+        $judul_laporan = "LAPORAN INTERAKSI SISWA (" . htmlspecialchars($target_id) . ")";
+    } else {
+        $filename = "Riwayat_Interaksi_CRM_Semua_" . date('Ymd_His') . ".doc";
+        $judul_laporan = "LAPORAN KESELURUHAN RIWAYAT INTERAKSI CRM";
+    }
+
+    // Header HTTP untuk mengunduh dokumen MS Word
+    header("Content-Type: application/vnd.ms-word");
+    header("Content-Disposition: attachment; filename=\"$filename\"");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="utf-8">
+        <title><?= $judul_laporan ?></title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #333; }
+            h3 { text-align: center; margin-bottom: 5px; color: #2b436f; }
+            p.meta { text-align: center; font-size: 9pt; color: #666; margin-top: 0; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #999; padding: 8px 10px; text-align: left; vertical-align: top; font-size: 10pt; }
+            th { background-color: #4a628a; color: #ffffff; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .badge { font-weight: bold; color: #222; }
+        </style>
+    </head>
+    <body>
+        <h3><?= $judul_laporan ?></h3>
+        <p class="meta">Dicetak pada: <?= date('d/m/Y H:i') ?></p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">No</th>
+                    <th>ID Siswa</th>
+                    <th>Nama Calon Siswa</th>
+                    <th>Jalur Daftar</th>
+                    <th>Asal Sekolah</th>
+                    <th>No HP / WA</th>
+                    <th>Sumber Info</th>
+                    <th>Status</th>
+                    <th>Biaya SPP</th>
+                    <th>Tgl Follow Up</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $no = 1; foreach ($export_data as $row): ?>
+                <tr>
+                    <td style="text-align: center;"><?= $no++ ?></td>
+                    <td><b><?= htmlspecialchars($row['id_siswa']) ?></b></td>
+                    <td>
+                        <b><?= htmlspecialchars($row['nama']) ?></b><br>
+                        <span style="font-size: 9pt; color: #555;"><?= htmlspecialchars($row['ortu']) ?></span>
+                    </td>
+                    <td><?= htmlspecialchars($row['jalur_daftar']) ?></td>
+                    <td><?= htmlspecialchars($row['asal_sekolah']) ?></td>
+                    <td><?= htmlspecialchars($row['no_hp']) ?></td>
+                    <td><?= htmlspecialchars($row['sumber_info']) ?></td>
+                    <td><span class="badge"><?= htmlspecialchars($row['status']) ?></span></td>
+                    <td><?= htmlspecialchars($row['biaya_spp']) ?></td>
+                    <td><?= htmlspecialchars($row['tgl_followup']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    <?php
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -84,9 +168,16 @@ $data_riwayat = [
         <div class="content-area">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-dark mb-0" style="font-size: 15px;">Daftar Data & Interaksi Calon Siswa</h6>
-                <a href="form_tambah_interaksi.php" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold shadow-sm text-decoration-none" style="font-size: 12px; background-color: #2b436f; border-color: #2b436f;">
-                    + Tambah Interaksi
-                </a>
+                <div class="d-flex gap-2">
+                    <!-- Tombol Cetak Word (Semua Data) -->
+                    <a href="?export=word" class="btn btn-success btn-sm px-3 py-1.5 fw-semibold shadow-sm text-decoration-none d-flex align-items-center gap-1" style="font-size: 12px; background-color: #198754; border-color: #198754;" title="Cetak Semua Data">
+                        <i class="fas fa-file-word"></i> Cetak Semua Word
+                    </a>
+                    <!-- Tombol Tambah Interaksi -->
+                    <a href="form_tambah_interaksi.php" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold shadow-sm text-decoration-none" style="font-size: 12px; background-color: #2b436f; border-color: #2b436f;">
+                        + Tambah Interaksi
+                    </a>
+                </div>
             </div>
 
             <div class="card border shadow-sm bg-white" style="border-radius: 8px;">
@@ -115,25 +206,31 @@ $data_riwayat = [
                                 $wa_message = urlencode("Halo {$row['nama']}, berikut informasi terkait interaksi dan pendaftaran Anda di sekolah.");
                             ?>
                             <tr>
-                                <td class="ps-3 fw-bold text-dark"><?= $row['id_siswa'] ?></td>
+                                <td class="ps-3 fw-bold text-dark"><?= htmlspecialchars($row['id_siswa']) ?></td>
                                 <td>
-                                    <span class="fw-bold text-dark"><?= $row['nama'] ?></span><br>
-                                    <span class="text-muted" style="font-size: 10.5px;"><?= $row['ortu'] ?></span>
+                                    <span class="fw-bold text-dark"><?= htmlspecialchars($row['nama']) ?></span><br>
+                                    <span class="text-muted" style="font-size: 10.5px;"><?= htmlspecialchars($row['ortu']) ?></span>
                                 </td>
-                                <td><?= $row['jalur_daftar'] ?></td>
-                                <td class="text-muted"><?= $row['asal_sekolah'] ?></td>
+                                <td><?= htmlspecialchars($row['jalur_daftar']) ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($row['asal_sekolah']) ?></td>
                                 <td>
                                     <a href="https://wa.me/<?= $clean_phone ?>?text=<?= $wa_message ?>" target="_blank" class="whatsapp-link" title="Kirim WhatsApp">
-                                        <i class="fab fa-whatsapp text-success"></i> <?= $row['no_hp'] ?>
+                                        <i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($row['no_hp']) ?>
                                     </a>
                                 </td>
-                                <td class="text-muted"><?= $row['sumber_info'] ?></td>
-                                <td><span class="badge bg-<?= $row['status_warna'] ?> px-2 py-1 fw-normal" style="font-size: 11px;"><?= $row['status'] ?></span></td>
-                                <td class="fw-semibold text-dark"><?= $row['biaya_spp'] ?></td>
-                                <td class="text-muted"><?= $row['tgl_followup'] ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($row['sumber_info']) ?></td>
+                                <td><span class="badge bg-<?= $row['status_warna'] ?> px-2 py-1 fw-normal" style="font-size: 11px;"><?= htmlspecialchars($row['status']) ?></span></td>
+                                <td class="fw-semibold text-dark"><?= htmlspecialchars($row['biaya_spp']) ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($row['tgl_followup']) ?></td>
                                 <td class="text-center pe-3">
                                     <div class="d-flex justify-content-center gap-1">
+                                        <!-- Tombol Cetak Word per Siswa -->
+                                        <a href="?export=word&id=<?= $row['id_siswa'] ?>" class="btn btn-success btn-sm px-2 py-0 text-decoration-none d-inline-flex align-items-center gap-1" style="font-size: 10.5px;" title="Cetak Word Siswa Ini">
+                                            <i class="fas fa-file-word"></i> Word
+                                        </a>
+                                        <!-- Tombol Edit -->
                                         <a href="form_tambah_interaksi.php?id=<?= $row['id_siswa'] ?>" class="btn btn-primary btn-sm px-2 py-0 text-decoration-none" style="font-size: 10.5px;">Edit</a>
+                                        <!-- Tombol Hapus -->
                                         <a href="#" class="btn btn-danger btn-sm px-2 py-0 text-decoration-none" style="font-size: 10.5px;" onclick="return confirm('Hapus data ini?')">Hapus</a>
                                     </div>
                                 </td>

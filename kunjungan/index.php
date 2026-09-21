@@ -34,6 +34,138 @@ $data_kunjungan = [
         'foto' => ''
     ]
 ];
+
+// Helper function untuk sanitasi XSS
+function e($str) {
+    return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+// =========================================================================
+// PROSES EKSPOR / CETAK VERSI MS WORD
+// =========================================================================
+
+// 1. Ekspor Seluruh Data Kunjungan ke Word
+if (isset($_GET['export']) && $_GET['export'] === 'word') {
+    $filename = "Laporan_Kunjungan_" . date('Y-m-d') . ".doc";
+    header("Content-Type: application/vnd.ms-word");
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Content-Disposition: attachment; filename={$filename}");
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Laporan Data Kunjungan Tamu</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #333; }
+            h2 { text-align: center; color: #2b436f; margin-bottom: 5px; }
+            p.subtitle { text-align: center; font-size: 10pt; color: #666; margin-top: 0; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #b0b0b0; padding: 8px 10px; text-align: left; vertical-align: top; font-size: 10pt; }
+            th { background-color: #4a628a; color: #ffffff; font-weight: bold; text-align: center; }
+            .text-center { text-align: center; }
+        </style>
+    </head>
+    <body>
+        <h2>DAFTAR TAMU & KUNJUNGAN - CRM SYSTEM</h2>
+        <p class="subtitle">Tanggal Cetak: <?= date('d-m-Y H:i') ?> WIB</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 10%;">ID</th>
+                    <th style="width: 22%;">Nama & Asal Sekolah</th>
+                    <th style="width: 13%;">Waktu</th>
+                    <th style="width: 18%;">Jenis & PIC</th>
+                    <th style="width: 12%;">No. HP / WA</th>
+                    <th style="width: 12%;">Sosmed</th>
+                    <th style="width: 8%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $no = 1; foreach ($data_kunjungan as $row): ?>
+                <tr>
+                    <td class="text-center"><?= $no++ ?></td>
+                    <td class="text-center"><b><?= e($row['id']) ?></b></td>
+                    <td>
+                        <b><?= e($row['nama_siswa']) ?></b><br>
+                        <font color="#666666" size="2"><?= e($row['asal_sekolah']) ?></font>
+                    </td>
+                    <td><?= e($row['tanggal']) ?><br><font color="#666666" size="2"><?= e($row['jam']) ?></font></td>
+                    <td><?= e($row['jenis']) ?><br><font color="#666666" size="2">PIC: <?= e($row['pic']) ?></font></td>
+                    <td><?= e($row['no_hp']) ?></td>
+                    <td>
+                        <?php if (!empty($row['sosmed'])): ?>
+                            <a href="<?= e($row['sosmed']) ?>"><?= e($row['sosmed_label']) ?></a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
+                    <td class="text-center"><b><?= e($row['status']) ?></b></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// 2. Ekspor Detail Single Kunjungan ke Word
+if (isset($_GET['export']) && $_GET['export'] === 'word_single' && !empty($_GET['id'])) {
+    $target_id = $_GET['id'];
+    $detail = null;
+    foreach ($data_kunjungan as $item) {
+        if ($item['id'] === $target_id) {
+            $detail = $item;
+            break;
+        }
+    }
+
+    if ($detail) {
+        $filename = "Detail_Kunjungan_" . $detail['id'] . ".doc";
+        header("Content-Type: application/vnd.ms-word");
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header("Content-Disposition: attachment; filename={$filename}");
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Detail Kunjungan - <?= e($detail['id']) ?></title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #333; }
+                h2 { text-align: center; color: #2b436f; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                td { border: 1px solid #cccccc; padding: 10px; vertical-align: top; }
+                .label { font-weight: bold; background-color: #f4f6f9; width: 30%; color: #4a628a; }
+            </style>
+        </head>
+        <body>
+            <h2>DETAIL INFORMASI KUNJUNGAN TAMU</h2>
+            <table>
+                <tr><td class="label">ID Kunjungan</td><td><b><?= e($detail['id']) ?></b></td></tr>
+                <tr><td class="label">Nama Siswa / Wali</td><td><?= e($detail['nama_siswa']) ?></td></tr>
+                <tr><td class="label">Asal Sekolah</td><td><?= e($detail['asal_sekolah']) ?></td></tr>
+                <tr><td class="label">Waktu Kunjungan</td><td><?= e($detail['tanggal']) ?> (<?= e($detail['jam']) ?>)</td></tr>
+                <tr><td class="label">Jenis Kunjungan</td><td><?= e($detail['jenis']) ?></td></tr>
+                <tr><td class="label">PIC (Staf)</td><td><?= e($detail['pic']) ?></td></tr>
+                <tr><td class="label">No. HP / WA</td><td><?= e($detail['no_hp']) ?></td></tr>
+                <tr><td class="label">Sosial Media</td><td><?= e($detail['sosmed_label']) ?> (<?= e($detail['sosmed']) ?>)</td></tr>
+                <tr><td class="label">Alamat</td><td><?= e($detail['alamat']) ?></td></tr>
+                <tr><td class="label">Hasil Kunjungan</td><td><?= e($detail['hasil']) ?></td></tr>
+                <tr><td class="label">Status</td><td><b><?= e($detail['status']) ?></b></td></tr>
+            </table>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -69,13 +201,34 @@ $data_kunjungan = [
     <!-- SIDEBAR -->
     <div class="sidebar">
         <h4>📈 CRM System</h4>
+        
         <a href="../dashboard/index.php" style="justify-content: flex-start; gap: 10px;">🏠 Dashboard</a>
         <a href="index.php" class="active" style="justify-content: flex-start; gap: 10px; border-left: 4px solid white;">👥 Kunjungan</a>
+        
+        <!-- MENU CRM -->
+        <a href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#menuCrm" style="justify-content: space-between; align-items: center;" aria-expanded="false">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span>👤</span>
+                <span>CRM</span>
+            </div>
+            <span>▼</span>
+        </a>
+        <div class="collapse" id="menuCrm">
+            <div style="background-color: #3b5074; display: flex; flex-direction: column;">
+                <a href="../crm/riwayat_interaksi.php" style="padding-left: 45px;">Riwayat Interaksi</a>
+                <a href="../crm/tahap.php" style="padding-left: 45px;">Tahap</a>
+                <a href="../crm/agent.php" style="padding-left: 45px;">Agent</a>
+                <a href="../crm/label_status.php" style="padding-left: 45px;">Label Status</a>
+            </div>
+        </div>
+
         <a href="../laporan/index.php" style="justify-content: flex-start; gap: 10px;">📋 Laporan</a>
         <a href="../users/index.php" style="justify-content: flex-start; gap: 10px;">🧑 Pengguna</a>
         <a href="../pengaturan/index.php" style="justify-content: flex-start; gap: 10px;">⚙️ Pengaturan</a>
+        
         <a href="../auth/logout.php" style="position: absolute; bottom: 20px; width: 100%; justify-content: flex-start; gap: 10px;">🚪 Logout</a>
     </div>
+
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
@@ -98,9 +251,15 @@ $data_kunjungan = [
         <div class="content-area">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-dark m-0" style="font-size: 15px;">Data Riwayat & Kunjungan Tamu</h6>
-                <a href="form_kunjungan.php" class="btn btn-primary btn-sm px-3 py-1 fw-semibold shadow-sm" style="font-size: 11.5px; background-color: #2b436f; border-color: #2b436f; border-radius: 4px;">
-                    + Tambah Kunjungan
-                </a>
+                <div class="d-flex gap-2">
+                    <!-- Tombol Cetak Semua Data ke Word -->
+                    <a href="?export=word" class="btn btn-outline-primary btn-sm px-3 py-1 fw-semibold shadow-sm" style="font-size: 11.5px; border-radius: 4px;">
+                        <i class="fa-solid fa-file-word me-1"></i> Cetak Word
+                    </a>
+                    <a href="form_kunjungan.php" class="btn btn-primary btn-sm px-3 py-1 fw-semibold shadow-sm" style="font-size: 11.5px; background-color: #2b436f; border-color: #2b436f; border-radius: 4px;">
+                        + Tambah Kunjungan
+                    </a>
+                </div>
             </div>
 
             <!-- TABEL UTAMA -->
@@ -114,36 +273,35 @@ $data_kunjungan = [
                                 <th style="width: 90px;">Waktu</th>
                                 <th>Jenis & PIC</th>
                                 <th style="width: 105px;">No. HP / WA</th>
-                                <th style="width: 115px;">Sosmed (Link)</th> <!-- Kolom Sosmed -->
+                                <th style="width: 115px;">Sosmed (Link)</th>
                                 <th class="text-center" style="width: 80px;">Status</th>
                                 <th class="text-center" style="width: 65px;">Foto</th>
-                                <th class="text-center" style="width: 125px;">Aksi</th>
+                                <th class="text-center" style="width: 160px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($data_kunjungan as $row): ?>
                             <tr>
-                                <td class="text-center fw-bold text-secondary"><?= $row['id'] ?></td>
+                                <td class="text-center fw-bold text-secondary"><?= e($row['id']) ?></td>
                                 <td>
-                                    <span class="fw-bold text-dark d-block"><?= $row['nama_siswa'] ?></span>
-                                    <span class="text-muted" style="font-size: 10.5px;"><?= $row['asal_sekolah'] ?></span>
+                                    <span class="fw-bold text-dark d-block"><?= e($row['nama_siswa']) ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;"><?= e($row['asal_sekolah']) ?></span>
                                 </td>
                                 <td>
-                                    <span class="d-block"><?= $row['tanggal'] ?></span>
-                                    <span class="text-muted" style="font-size: 10.5px;"><?= $row['jam'] ?></span>
+                                    <span class="d-block"><?= e($row['tanggal']) ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;"><?= e($row['jam']) ?></span>
                                 </td>
                                 <td>
-                                    <span class="d-block"><?= $row['jenis'] ?></span>
-                                    <span class="text-muted" style="font-size: 10.5px;">Staf: <?= $row['pic'] ?></span>
+                                    <span class="d-block"><?= e($row['jenis']) ?></span>
+                                    <span class="text-muted" style="font-size: 10.5px;">Staf: <?= e($row['pic']) ?></span>
                                 </td>
                                 <td>
-                                    <span class="text-dark fw-medium"><i class="fa-brands fa-whatsapp text-success me-1"></i><?= $row['no_hp'] ?></span>
+                                    <span class="text-dark fw-medium"><i class="fa-brands fa-whatsapp text-success me-1"></i><?= e($row['no_hp']) ?></span>
                                 </td>
-                                <!-- Data Sosmed Berupa Link -->
                                 <td>
                                     <?php if (!empty($row['sosmed'])): ?>
-                                        <a href="<?= $row['sosmed'] ?>" target="_blank" class="text-decoration-none text-primary fw-semibold" style="font-size: 11px;">
-                                            <i class="fa-solid fa-link me-1"></i><?= $row['sosmed_label'] ?>
+                                        <a href="<?= e($row['sosmed']) ?>" target="_blank" class="text-decoration-none text-primary fw-semibold" style="font-size: 11px;">
+                                            <i class="fa-solid fa-link me-1"></i><?= e($row['sosmed_label']) ?>
                                         </a>
                                     <?php else: ?>
                                         <span class="text-muted" style="font-size: 11px;">-</span>
@@ -160,21 +318,21 @@ $data_kunjungan = [
                                 </td>
                                 <td class="text-center">
                                     <?php if (!empty($row['foto'])): ?>
-                                        <img src="<?= $row['foto'] ?>" class="img-thumb" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#modalViewKunjungan"
-                                            data-id="<?= $row['id'] ?>"
-                                            data-namasiswa="<?= $row['nama_siswa'] ?>"
-                                            data-asalsekolah="<?= $row['asal_sekolah'] ?>"
-                                            data-tanggal="<?= $row['tanggal'] ?>"
-                                            data-jam="<?= $row['jam'] ?>"
-                                            data-jenis="<?= $row['jenis'] ?>"
-                                            data-pic="<?= $row['pic'] ?>"
-                                            data-nohp="<?= $row['no_hp'] ?>"
-                                            data-sosmed="<?= $row['sosmed'] ?>"
-                                            data-sosmedlabel="<?= $row['sosmed_label'] ?>"
-                                            data-alamat="<?= $row['alamat'] ?>"
-                                            data-hasil="<?= $row['hasil'] ?>"
-                                            data-status="<?= $row['status'] ?>"
-                                            data-foto="<?= $row['foto'] ?>">
+                                        <img src="<?= e($row['foto']) ?>" class="img-thumb" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#modalViewKunjungan"
+                                            data-id="<?= e($row['id']) ?>"
+                                            data-namasiswa="<?= e($row['nama_siswa']) ?>"
+                                            data-asalsekolah="<?= e($row['asal_sekolah']) ?>"
+                                            data-tanggal="<?= e($row['tanggal']) ?>"
+                                            data-jam="<?= e($row['jam']) ?>"
+                                            data-jenis="<?= e($row['jenis']) ?>"
+                                            data-pic="<?= e($row['pic']) ?>"
+                                            data-nohp="<?= e($row['no_hp']) ?>"
+                                            data-sosmed="<?= e($row['sosmed']) ?>"
+                                            data-sosmedlabel="<?= e($row['sosmed_label']) ?>"
+                                            data-alamat="<?= e($row['alamat']) ?>"
+                                            data-hasil="<?= e($row['hasil']) ?>"
+                                            data-status="<?= e($row['status']) ?>"
+                                            data-foto="<?= e($row['foto']) ?>">
                                     <?php else: ?>
                                         <span class="text-muted" style="font-size: 11px;">-</span>
                                     <?php endif; ?>
@@ -184,24 +342,28 @@ $data_kunjungan = [
                                         <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size: 11px;"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#modalViewKunjungan"
-                                            data-id="<?= $row['id'] ?>"
-                                            data-namasiswa="<?= $row['nama_siswa'] ?>"
-                                            data-asalsekolah="<?= $row['asal_sekolah'] ?>"
-                                            data-tanggal="<?= $row['tanggal'] ?>"
-                                            data-jam="<?= $row['jam'] ?>"
-                                            data-jenis="<?= $row['jenis'] ?>"
-                                            data-pic="<?= $row['pic'] ?>"
-                                            data-nohp="<?= $row['no_hp'] ?>"
-                                            data-sosmed="<?= $row['sosmed'] ?>"
-                                            data-sosmedlabel="<?= $row['sosmed_label'] ?>"
-                                            data-alamat="<?= $row['alamat'] ?>"
-                                            data-hasil="<?= $row['hasil'] ?>"
-                                            data-status="<?= $row['status'] ?>"
-                                            data-foto="<?= $row['foto'] ?>">
+                                            data-id="<?= e($row['id']) ?>"
+                                            data-namasiswa="<?= e($row['nama_siswa']) ?>"
+                                            data-asalsekolah="<?= e($row['asal_sekolah']) ?>"
+                                            data-tanggal="<?= e($row['tanggal']) ?>"
+                                            data-jam="<?= e($row['jam']) ?>"
+                                            data-jenis="<?= e($row['jenis']) ?>"
+                                            data-pic="<?= e($row['pic']) ?>"
+                                            data-nohp="<?= e($row['no_hp']) ?>"
+                                            data-sosmed="<?= e($row['sosmed']) ?>"
+                                            data-sosmedlabel="<?= e($row['sosmed_label']) ?>"
+                                            data-alamat="<?= e($row['alamat']) ?>"
+                                            data-hasil="<?= e($row['hasil']) ?>"
+                                            data-status="<?= e($row['status']) ?>"
+                                            data-foto="<?= e($row['foto']) ?>">
                                             View
                                         </button>
-                                        <a href="form_kunjungan.php?id=<?= $row['id'] ?>" class="btn btn-outline-primary btn-sm px-2 py-0" style="font-size: 11px;">Edit</a>
-                                        <a href="hapus.php?id=<?= $row['id'] ?>" class="btn btn-outline-danger btn-sm px-2 py-0" onclick="return confirm('Yakin ingin menghapus data ini?')" style="font-size: 11px;">Hapus</a>
+                                        <!-- Tombol Cetak Word Single Per Tamu -->
+                                        <a href="?export=word_single&id=<?= e($row['id']) ?>" class="btn btn-outline-success btn-sm px-2 py-0" style="font-size: 11px;" title="Cetak Word">
+                                            <i class="fa-solid fa-file-word"></i> Word
+                                        </a>
+                                        <a href="form_kunjungan.php?id=<?= e($row['id']) ?>" class="btn btn-outline-primary btn-sm px-2 py-0" style="font-size: 11px;">Edit</a>
+                                        <a href="hapus.php?id=<?= e($row['id']) ?>" class="btn btn-outline-danger btn-sm px-2 py-0" onclick="return confirm('Yakin ingin menghapus data ini?')" style="font-size: 11px;">Hapus</a>
                                     </div>
                                 </td>
                             </tr>
@@ -213,7 +375,7 @@ $data_kunjungan = [
         </div>
     </div>
 
-    <!-- MODAL VIEW DETAIL DENGAN LINK SOSMED -->
+    <!-- MODAL VIEW DETAIL DENGAN LINK SOSMED & CETAK WORD -->
     <div class="modal fade" id="modalViewKunjungan" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content" style="border-radius: 8px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
@@ -241,7 +403,6 @@ $data_kunjungan = [
                                     <td class="fw-bold text-secondary">No. HP / WA</td>
                                     <td id="view_nohp" class="text-dark fw-semibold text-success"></td>
                                 </tr>
-                                <!-- Sosmed Link di Modal View -->
                                 <tr>
                                     <td class="fw-bold text-secondary">Sosial Media</td>
                                     <td>
@@ -286,7 +447,10 @@ $data_kunjungan = [
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top py-2 px-3">
+                <div class="modal-footer border-top py-2 px-3 d-flex justify-content-between">
+                    <a id="btn_export_word_modal" href="#" class="btn btn-outline-success btn-sm px-3" style="font-size: 11.5px; border-radius: 4px;">
+                        <i class="fa-solid fa-file-word me-1"></i> Cetak Word
+                    </a>
                     <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal" style="font-size: 11.5px; border-radius: 4px;">Tutup</button>
                 </div>
             </div>
@@ -299,13 +463,17 @@ $data_kunjungan = [
             var modalView = document.getElementById('modalViewKunjungan');
             modalView.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget;
+                var id = button.getAttribute('data-id');
                 
-                document.getElementById('view_id').textContent = button.getAttribute('data-id');
+                document.getElementById('view_id').textContent = id;
                 document.getElementById('view_namasiswa').textContent = button.getAttribute('data-namasiswa');
                 document.getElementById('view_asalsekolah').textContent = button.getAttribute('data-asalsekolah');
                 document.getElementById('view_nohp').textContent = button.getAttribute('data-nohp');
                 
-                // Set link URL dan teks pada Modal View
+                // Dynamic link untuk tombol Cetak Word di modal
+                document.getElementById('btn_export_word_modal').href = '?export=word_single&id=' + encodeURIComponent(id);
+
+                // Set link URL dan teks sosial media
                 var sosmedUrl = button.getAttribute('data-sosmed');
                 var sosmedLabel = button.getAttribute('data-sosmedlabel');
                 var sosmedLinkElement = document.getElementById('view_sosmed_link');
